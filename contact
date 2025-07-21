@@ -1,0 +1,136 @@
+<?php
+session_start();
+include "header.php";
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require 'assets/PHPMailer/Exception.php';
+require 'assets/PHPMailer/PHPMailer.php';
+require 'assets/PHPMailer/SMTP.php';
+
+$pesan_sukses = "";
+$pesan_error = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $nama = htmlspecialchars(trim($_POST["nama"]));
+    $email = filter_var(trim($_POST["email"]), FILTER_SANITIZE_EMAIL);
+    $pesan = htmlspecialchars(trim($_POST["pesan"]));
+
+    if (empty($nama) || empty($email) || empty($pesan)) {
+        $_SESSION["pesan_error"] = "Semua field wajib diisi!";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION["pesan_error"] = "Format email tidak valid!";
+    } else {
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'naylaelatussaadah@gmail.com';
+            $mail->Password   = 'ommchzttcptvnvgz';
+            $mail->SMTPSecure = 'tls';
+            $mail->Port       = 587;
+
+            $mail->setFrom($email, $nama);
+            $mail->addAddress('naylaelatussaadah@gmail.com');
+            $mail->Subject = "Pesan dari kontak website";
+            $mail->Body    = "Nama: $nama\nEmail: $email\n\nPesan:\n$pesan";
+
+            $mail->send();
+            $_SESSION["pesan_sukses"] = "Pesan berhasil dikirim!";
+        } catch (Exception $e) {
+            $_SESSION["pesan_error"] = "Gagal mengirim pesan. Error: {$mail->ErrorInfo}";
+        }
+    }
+
+    // Redirect agar pesan tidak muncul lagi saat refresh
+    header("Location: contact.php");
+    exit();
+}
+
+?>
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kontak</title>
+    <style>
+        body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: white;
+}
+
+form {
+    max-width: 500px;
+    margin: 50px auto; /* Ini bikin form ke tengah */
+    padding: 30px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+form label {
+    font-weight: bold;
+}
+
+form input,
+form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+form button {
+    background-color: rgb(0, 8, 77);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: rgb(0, 15, 100);
+}
+
+    </style>
+</head>
+<body>
+<div style="text-align: center; margin-top: 30px;">
+    <img src="assets/file/logo_motoclub.jpg" style="width: 100%; max-width: 300px; margin-bottom: 20px;" alt="Logo MotoClub">
+    
+    <h2>Hubungi Kami</h2>
+
+    <?php if (isset($_SESSION["pesan_sukses"])) {
+            echo '<p style="color: green;">' . $_SESSION["pesan_sukses"] . '</p>';
+            unset($_SESSION["pesan_sukses"]);
+        } elseif (isset($_SESSION["pesan_error"])) {
+            echo '<p style="color: red;">' . $_SESSION["pesan_error"] . '</p>';
+            unset($_SESSION["pesan_error"]);
+        }
+        ?>
+</div>
+<form action="contact.php" method="POST">
+    <label>Nama:</label><br>
+    <input type="text" name="nama" placeholder="Masukkan nama" required><br><br>
+
+    <label>Email:</label><br>
+    <input type="email" name="email" placeholder="Masukkan email" required><br><br>
+
+    <label>Pesan:</label><br>
+    <textarea name="pesan" rows="5" placeholder="Tulis pesan Anda di sini..." required></textarea><br><br>
+
+    <button type="submit">Kirim</button>
+</form>
+
+<?php include "footer.php"; ?>
+</body>
+</html>
